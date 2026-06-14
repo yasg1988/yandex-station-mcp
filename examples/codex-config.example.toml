@@ -1,0 +1,11 @@
+# Пример секции для C:\Users\<USER>\.codex\config.toml
+# Замените путь на путь к своему checkout репозитория.
+
+[mcp_servers.yandex-station]
+command = "python"
+args = ["D:\\path\\to\\yandex-station-mcp\\yandex_station_mcp\\server.py"]
+startup_timeout_ms = 20000
+
+[mcp_servers.yandex-station.env]
+YANDEX_TOKEN_FILE = "D:\\path\\to\\yandex-station-mcp\\yandex_station_mcp\\yandex_tokens.json"
+# YANDEX_STATION_ID = "опционально"

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.log
+yandex_station_mcp/.env
+yandex_station_mcp/yandex_tokens.json
+yandex_station_mcp/qr_session.json
