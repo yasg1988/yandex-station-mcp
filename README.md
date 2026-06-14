@@ -93,3 +93,38 @@ YANDEX_TOKEN_FILE = "D:\\path\\to\\yandex-station-mcp\\yandex_station_mcp\\yande
 - `поставь громкость Алисы 30 процентов`
 - `попроси Алису включить мою волну`
 - `скажи через колонку: ужин готов`
+
+## Уведомление Codex через колонку после завершения задачи
+
+В репозитории есть готовый hook-скрипт:
+
+```text
+hooks/codex_stop_notify.py
+```
+
+Он срабатывает на событии Codex CLI `Stop`, ставит громкость `0.4` и произносит:
+
+```text
+Сообщение от Кодекс: я закончил задачу
+```
+
+Пример блока для `C:\Users\<USER>\.codex\config.toml`:
+
+```toml
+[[hooks.Stop]]
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'python "D:\path\to\yandex-station-mcp\hooks\codex_stop_notify.py"'
+timeout = 30
+statusMessage = "Уведомляю через Яндекс Станцию"
+```
+
+После добавления hook откройте в Codex CLI команду `/hooks` и подтвердите доверие к hook-команде. Это нужно один раз после добавления или изменения hook.
+
+Чтобы временно отключить уведомление без удаления hook, запустите Codex с переменной окружения:
+
+```powershell
+$env:CODEX_YANDEX_NOTIFY_DISABLED = "1"
+codex
+```
