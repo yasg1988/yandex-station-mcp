@@ -9,9 +9,15 @@
 - получить список колонок аккаунта;
 - отправить Алисе текстовую команду: `включи радио Европа плюс`;
 - произнести текст через колонку;
+- произнести уведомление с заданной громкостью;
 - поставить громкость;
 - play / pause / next / previous;
+- stop;
 - быстрые команды для музыки и радио.
+- таймеры, будильники, напоминания;
+- погода и новости;
+- список и запуск сценариев Яндекс Умного дома;
+- диагностика подключения без вывода токенов.
 
 ## Ограничения
 
@@ -70,21 +76,51 @@ startup_timeout_ms = 20000
 [mcp_servers.yandex-station.env]
 YANDEX_TOKEN_FILE = "D:\\path\\to\\yandex-station-mcp\\yandex_station_mcp\\yandex_tokens.json"
 # YANDEX_STATION_ID = "опционально"
+# YANDEX_STATION_NAME = "опционально"
 ```
+
+Если колонок несколько, можно задать колонку по умолчанию через `YANDEX_STATION_ID` или `YANDEX_STATION_NAME`. Если переменные не заданы, используется первая доступная колонка аккаунта.
 
 ## MCP tools
 
 - `station_list`
 - `station_status`
+- `station_default`
+- `station_diagnostics`
 - `station_command`
 - `station_say`
+- `station_notify`
 - `station_volume`
 - `station_play`
 - `station_pause`
+- `station_stop`
 - `station_next`
 - `station_previous`
 - `station_radio`
 - `station_music`
+- `station_timer`
+- `station_alarm`
+- `station_reminder`
+- `station_weather`
+- `station_news`
+- `station_scenario_list`
+- `station_scenario_run`
+
+## CLI команды
+
+```powershell
+python yandex_station_mcp\cli.py list
+python yandex_station_mcp\cli.py diagnostics
+python yandex_station_mcp\cli.py notify "Задача завершена" --volume 0.4
+python yandex_station_mcp\cli.py stop
+python yandex_station_mcp\cli.py timer 10 --text "проверить духовку"
+python yandex_station_mcp\cli.py alarm "7:30"
+python yandex_station_mcp\cli.py reminder "купить хлеб" "завтра в 9"
+python yandex_station_mcp\cli.py weather
+python yandex_station_mcp\cli.py news
+python yandex_station_mcp\cli.py scenarios
+python yandex_station_mcp\cli.py scenario "Название сценария"
+```
 
 ## Примеры фраз для Codex
 
@@ -93,6 +129,11 @@ YANDEX_TOKEN_FILE = "D:\\path\\to\\yandex-station-mcp\\yandex_station_mcp\\yande
 - `поставь громкость Алисы 30 процентов`
 - `попроси Алису включить мою волну`
 - `скажи через колонку: ужин готов`
+- `уведомь через колонку: задача завершена`
+- `поставь таймер на 10 минут`
+- `поставь будильник на 7:30`
+- `напомни завтра в 9 купить хлеб`
+- `запусти сценарий Вечер`
 
 ## Уведомление Codex через колонку после завершения задачи
 

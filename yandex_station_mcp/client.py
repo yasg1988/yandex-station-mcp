@@ -377,7 +377,7 @@ class YandexStationClient:
         if not speakers:
             raise RuntimeError("в аккаунте не найдены Яндекс Станции с облачным управлением")
 
-        station = station or os.environ.get("YANDEX_STATION_ID") or ""
+        station = station or os.environ.get("YANDEX_STATION_ID") or os.environ.get("YANDEX_STATION_NAME") or ""
         station = station.strip().lower()
         if not station:
             return speakers[0]
@@ -387,10 +387,38 @@ class YandexStationClient:
                 str(speaker.get("id", "")).lower(),
                 str(speaker.get("name", "")).lower(),
                 str(speaker.get("quasar_info", {}).get("device_id", "")).lower(),
+                str(speaker.get("house_name", "")).lower(),
             }
             if station in values:
                 return speaker
         raise RuntimeError(f"станция не найдена: {station}")
+
+    def list_scenarios(self, include_service: bool = False) -> list[dict[str, Any]]:
+        return [
+            {
+                "id": scenario.get("id"),
+                "name": scenario.get("name"),
+                "icon": scenario.get("icon"),
+                "triggers": [
+                    trigger.get("value")
+                    for trigger in scenario.get("triggers", [])
+                    if isinstance(trigger, dict)
+                ],
+            }
+            for scenario in self.scenarios
+            if include_service or not str(scenario.get("name", "")).startswith("ХА ")
+        ]
+
+    def select_scenario(self, scenario: str) -> dict[str, Any]:
+        query = scenario.strip().lower()
+        for item in self.scenarios:
+            values = {
+                str(item.get("id", "")).lower(),
+                str(item.get("name", "")).lower(),
+            }
+            if query in values:
+                return item
+        raise RuntimeError(f"сценарий не найден: {scenario}")
 
     async def send_text(self, text: str, *, station: str | None = None, is_tts: bool = False) -> dict[str, Any]:
         device = self.select_speaker(station)
@@ -426,6 +454,13 @@ class YandexStationClient:
         value = round(level * 10)
         return await self.command(f"громкость на {value}", station=station)
 
+    async def notify(self, text: str, volume: float | None = 0.4, station: str | None = None) -> dict[str, Any]:
+        result: dict[str, Any] = {"ok": True, "steps": []}
+        if volume is not None:
+            result["steps"].append(await self.volume(volume, station=station))
+        result["steps"].append(await self.say(text, station=station))
+        return result
+
     async def play(self, station: str | None = None) -> dict[str, Any]:
         return await self.command("продолжить", station=station)
 
@@ -437,6 +472,53 @@ class YandexStationClient:
 
     async def previous(self, station: str | None = None) -> dict[str, Any]:
         return await self.command("прошлый трек", station=station)
+
+    async def stop(self, station: str | None = None) -> dict[str, Any]:
+        return await self.command("останови", station=station)
+
+    async def timer(self, minutes: int, text: str | None = None, station: str | None = None) -> dict[str, Any]:
+        minutes = max(1, int(minutes))
+        suffix = f" {text}" if text else ""
+        return await self.command(f"поставь таймер на {minutes} минут{suffix}", station=station)
+
+    async def alarm(self, time_text: str, text: str | None = None, station: str | None = None) -> dict[str, Any]:
+        suffix = f" {text}" if text else ""
+        return await self.command(f"поставь будильник на {time_text}{suffix}", station=station)
+
+    async def reminder(self, text: str, time_text: str, station: str | None = None) -> dict[str, Any]:
+        return await self.command(f"напомни {time_text}: {text}", station=station)
+
+    async def weather(self, station: str | None = None) -> dict[str, Any]:
+        return await self.command("какая погода", station=station)
+
+    async def news(self, station: str | None = None) -> dict[str, Any]:
+        return await self.command("включи новости", station=station)
+
+    async def run_scenario(self, scenario: str) -> dict[str, Any]:
+        item = self.select_scenario(scenario)
+        scenario_id = item["id"]
+        response = await self.session.post(f"https://iot.quasar.yandex.ru/m/user/scenarios/{scenario_id}/actions")
+        data = await response.json()
+        if data.get("status") != "ok":
+            raise RuntimeError(f"не удалось запустить сценарий: {data}")
+        return {"ok": True, "scenario": {"id": scenario_id, "name": item.get("name")}}
+
+    def diagnostics(self, station: str | None = None) -> dict[str, Any]:
+        selected = self.select_speaker(station)
+        return {
+            "ok": True,
+            "default_station": public_speaker(selected),
+            "speakers_count": len(self.speakers),
+            "devices_count": len(self.devices),
+            "scenarios_count": len(self.scenarios),
+            "token_file": str(token_file_path()),
+            "env": {
+                "YANDEX_STATION_ID": bool(os.environ.get("YANDEX_STATION_ID")),
+                "YANDEX_STATION_NAME": bool(os.environ.get("YANDEX_STATION_NAME")),
+                "YANDEX_TOKEN_FILE": bool(os.environ.get("YANDEX_TOKEN_FILE")),
+                "YANDEX_DOMAIN": bool(os.environ.get("YANDEX_DOMAIN")),
+            },
+        }
 
 
 def public_speaker(speaker: dict[str, Any]) -> dict[str, Any]:
